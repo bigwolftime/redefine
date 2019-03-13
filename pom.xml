@@ -3,30 +3,29 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
-    <parent>
-        <groupId>suishen</groupId>
-        <artifactId>root-pom</artifactId>
-        <version>1.6-SNAPSHOT</version>
-    </parent>
 
-    <groupId>suishen</groupId>
-    <artifactId>suishen-xcode</artifactId>
+    <groupId>io.github.bigwolftime</groupId>
+    <artifactId>redefine</artifactId>
     <packaging>jar</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1</version>
 
-    <repositories>
-        <repository>
-            <id>nexus-suishen</id>
-            <name>Nexus suishen</name>
-            <url>http://maven.etouch.cn/nexus/content/groups/public/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </snapshots>
-        </repository>
-    </repositories>
+    <name>redefine</name>
+    <description>Use ByteBuddy API for code redefinition(Java)</description>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/bigwolftime/redefine.git</url>
+        <connection>scm:git:git@github.com:bigwolftime/redefine.git</connection>
+        <developerConnection>scm:git:git@github.com:bigwolftime/redefine.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -36,10 +35,24 @@
 
     <dependencies>
         <dependency>
-            <groupId>suishen</groupId>
-            <artifactId>suishen-libs</artifactId>
-            <version>1.9.8-SNAPSHOT</version>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.0.1</version>
+            <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+            <version>1.10.18</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -64,6 +77,18 @@
                         <phase>compile</phase>
                         <goals>
                             <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-deploy</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>deploy</goal>
                         </goals>
                     </execution>
                 </executions>
