@@ -1,9 +1,7 @@
 package com.bigwolftime.api;
 
-import com.alibaba.fastjson.JSON;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.LoggerFactory;
 import com.bigwolftime.compile.DynamicCompile;
 
 import javax.servlet.ServletException;
@@ -53,7 +51,7 @@ public class ExtendRedefineServlet extends HttpServlet {
     }
 
     private byte[] compileByArthas(InputStream inputStream, String className) throws IOException {
-        String jarPath = LoggerFactory.class.getProtectionDomain().getCodeSource().getLocation().getFile();
+        String jarPath = DynamicCompile.class.getProtectionDomain().getCodeSource().getLocation().getFile();
         File file = new File(jarPath);
 
         URLClassLoader classLoader = new URLClassLoader(new URL[] { file.toURI().toURL() },
@@ -61,7 +59,7 @@ public class ExtendRedefineServlet extends HttpServlet {
 
         DynamicCompile dynamicCompiler = new DynamicCompile(classLoader);
 
-        String code = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+        String code = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
         dynamicCompiler.addSource(className, code);
 
         Map<String, byte[]> byteCodes = dynamicCompiler.buildByteCodes();
@@ -89,7 +87,7 @@ public class ExtendRedefineServlet extends HttpServlet {
         PrintWriter out = null;
         try {
             out = response.getWriter();
-            out.print(JSON.toJSONString(result));
+            out.print(result);
         } catch (Throwable e) {
             e.printStackTrace();
         } finally {
