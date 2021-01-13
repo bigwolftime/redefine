@@ -1,6 +1,5 @@
 package com.bigwolftime.api;
 
-import com.sun.org.slf4j.internal.LoggerFactory;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import org.apache.commons.io.IOUtils;
 import com.bigwolftime.compile.DynamicCompile;
@@ -52,7 +51,7 @@ public class ExtendRedefineServlet extends HttpServlet {
     }
 
     private byte[] compileByArthas(InputStream inputStream, String className) throws IOException {
-        String jarPath = LoggerFactory.class.getProtectionDomain().getCodeSource().getLocation().getFile();
+        String jarPath = DynamicCompile.class.getProtectionDomain().getCodeSource().getLocation().getFile();
         File file = new File(jarPath);
 
         URLClassLoader classLoader = new URLClassLoader(new URL[] { file.toURI().toURL() },
