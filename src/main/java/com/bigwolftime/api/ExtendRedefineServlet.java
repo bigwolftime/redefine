@@ -1,9 +1,8 @@
 package com.bigwolftime.api;
 
-import com.alibaba.fastjson.JSON;
+import com.sun.org.slf4j.internal.LoggerFactory;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.LoggerFactory;
 import com.bigwolftime.compile.DynamicCompile;
 
 import javax.servlet.ServletException;
@@ -61,7 +60,7 @@ public class ExtendRedefineServlet extends HttpServlet {
 
         DynamicCompile dynamicCompiler = new DynamicCompile(classLoader);
 
-        String code = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+        String code = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
         dynamicCompiler.addSource(className, code);
 
         Map<String, byte[]> byteCodes = dynamicCompiler.buildByteCodes();
@@ -89,7 +88,7 @@ public class ExtendRedefineServlet extends HttpServlet {
         PrintWriter out = null;
         try {
             out = response.getWriter();
-            out.print(JSON.toJSONString(result));
+            out.print(result);
         } catch (Throwable e) {
             e.printStackTrace();
         } finally {

@@ -27,6 +27,59 @@
         <tag>HEAD</tag>
     </scm>
 
+    <developers>
+        <developer>
+            <id>bigwolftime</id>
+            <name>bigowlftime</name>
+            <email>zonheng@yahoo.com</email>
+        </developer>
+    </developers>
+
+    <profiles>
+        <profile>
+            <id>jdk8</id>
+            <activation>
+                <jdk>[1.8,1.8]</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>pl.project13.maven</groupId>
+                        <artifactId>git-commit-id-plugin</artifactId>
+                        <version>4.0.1</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>revision</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <verbose>false</verbose>
+                            <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
+                            <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                            <generateGitPropertiesFilename>./redefine-git.properties</generateGitPropertiesFilename>
+                            <excludeProperties>
+                                <excludeProperty>git.branch</excludeProperty>
+                                <excludeProperty>git.build.host</excludeProperty>
+                                <excludeProperty>git.build.time</excludeProperty>
+                                <excludeProperty>git.build.user.email</excludeProperty>
+                                <excludeProperty>git.build.user.name</excludeProperty>
+                                <excludeProperty>git.remote.origin.url</excludeProperty>
+                                <excludeProperty>git.total.commit.count</excludeProperty>
+                                <excludeProperty>git.commit.time</excludeProperty>
+                                <excludeProperty>git.local.branch.ahead</excludeProperty>
+                                <excludeProperty>git.local.branch.behind</excludeProperty>
+                                <excludeProperty>git.tags</excludeProperty>
+                            </excludeProperties>
+                            <injectAllReactorProjects>true</injectAllReactorProjects>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -51,6 +104,12 @@
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy-agent</artifactId>
             <version>1.10.18</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.3.2</version>
         </dependency>
 
     </dependencies>
@@ -92,6 +151,14 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
             </plugin>
         </plugins>
     </build>
