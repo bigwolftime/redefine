@@ -45,6 +45,7 @@ public class ExtendRedefineServlet extends HttpServlet {
         byte[] bytes = compileByArthas(filePart.getInputStream(), cls);
         try {
             transformer(cls, bytes);
+            print(resp, "redefine success.");
         } catch (ClassNotFoundException | UnmodifiableClassException e) {
             print(resp, "transform error. " + e.getMessage());
         }
