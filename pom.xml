@@ -13,7 +13,7 @@
     <groupId>io.github.bigwolftime</groupId>
     <artifactId>redefine</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 
     <name>redefine</name>
     <description>Use ByteBuddy API for code redefinition(Java)</description>

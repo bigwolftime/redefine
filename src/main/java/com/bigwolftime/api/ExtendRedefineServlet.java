@@ -1,8 +1,8 @@
 package com.bigwolftime.api;
 
+import com.bigwolftime.compile.DynamicCompile;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import org.apache.commons.io.IOUtils;
-import com.bigwolftime.compile.DynamicCompile;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 
-@WebServlet("/backend/xcode/redefine")
+@WebServlet("/backend/redefine")
 @MultipartConfig
 public class ExtendRedefineServlet extends HttpServlet {
 
