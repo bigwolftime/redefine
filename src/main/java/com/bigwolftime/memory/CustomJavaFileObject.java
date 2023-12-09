@@ -27,15 +27,12 @@ import java.io.*;
 import java.net.URI;
 
 public class CustomJavaFileObject implements JavaFileObject {
-    private final String binaryName;
+    private final String className;
     private final URI uri;
-    private final String name;
 
-    public CustomJavaFileObject(String binaryName, URI uri) {
+    public CustomJavaFileObject(String className, URI uri) {
         this.uri = uri;
-        this.binaryName = binaryName;
-        // for FS based URI the path is not null, for JAR URI the scheme specific part is not null
-        name = uri.getPath() == null ? uri.getSchemeSpecificPart() : uri.getPath();
+        this.className = className;
     }
 
     @Override
@@ -55,7 +52,7 @@ public class CustomJavaFileObject implements JavaFileObject {
 
     @Override
     public String getName() {
-        return name;
+        return className;
     }
 
     @Override
@@ -90,10 +87,8 @@ public class CustomJavaFileObject implements JavaFileObject {
 
     @Override
     public boolean isNameCompatible(String simpleName, Kind kind) {
-        String baseName = simpleName + kind.extension;
-        return kind.equals(getKind())
-                && (baseName.equals(getName())
-                || getName().endsWith("/" + baseName));
+        return Kind.CLASS.equals(getKind())
+                && this.className.endsWith(simpleName);
     }
 
     @Override
@@ -106,8 +101,8 @@ public class CustomJavaFileObject implements JavaFileObject {
         throw new UnsupportedOperationException();
     }
 
-    public String binaryName() {
-        return binaryName;
+    public String getClassName() {
+        return className;
     }
 
 

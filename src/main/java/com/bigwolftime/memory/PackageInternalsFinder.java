@@ -25,15 +25,17 @@ import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.List;
+import java.net.URLDecoder;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
+import java.util.stream.Collectors;
 
 public class PackageInternalsFinder {
     private final ClassLoader classLoader;
     private static final String CLASS_FILE_EXTENSION = ".class";
+
+    private static final Map<String, JarFileIndex> INDEXS = new ConcurrentHashMap<>();
 
     public PackageInternalsFinder(ClassLoader classLoader) {
         this.classLoader = classLoader;
@@ -42,7 +44,7 @@ public class PackageInternalsFinder {
     public List<JavaFileObject> find(String packageName) throws IOException {
         String javaPackageName = packageName.replaceAll("\\.", "/");
 
-        List<JavaFileObject> result = new ArrayList<JavaFileObject>();
+        List<JavaFileObject> result = new ArrayList<>();
 
         Enumeration<URL> urlEnumeration = classLoader.getResources(javaPackageName);
         // one URL for each jar on the classpath that has the given package
@@ -55,18 +57,37 @@ public class PackageInternalsFinder {
     }
 
     private Collection<JavaFileObject> listUnder(String packageName, URL packageFolderURL) {
-        File directory = new File(packageFolderURL.getFile());
+        File directory = new File(decode(packageFolderURL.getFile()));
         // browse local .class files - useful for local execution
         if (directory.isDirectory()) {
             return processDir(packageName, directory);
         } else {
             // browse a jar file
-            return processJar(packageFolderURL);
+            return processJar(packageName, packageFolderURL);
         }
     }
 
-    private List<JavaFileObject> processJar(URL packageFolderURL) {
-        List<JavaFileObject> result = new ArrayList<JavaFileObject>();
+    private List<JavaFileObject> processJar(String packageName, URL packageFolderURL) {
+        try {
+            String jarUri = packageFolderURL.toExternalForm().substring(0, packageFolderURL.toExternalForm().lastIndexOf("!/"));
+            JarFileIndex jarFileIndex = INDEXS.get(jarUri);
+            if (jarFileIndex == null) {
+                jarFileIndex = new JarFileIndex(jarUri, URI.create(jarUri + "!/"));
+                INDEXS.put(jarUri, jarFileIndex);
+            }
+
+            List<JavaFileObject> result = jarFileIndex.search(packageName);
+            if (result != null) {
+                return result;
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return fuse(packageFolderURL);
+    }
+
+    private List<JavaFileObject> fuse(URL packageFolderURL) {
+        List<JavaFileObject> result = new ArrayList<>();
         try {
             String jarUri = packageFolderURL.toExternalForm().substring(0, packageFolderURL.toExternalForm().lastIndexOf("!/"));
 
@@ -108,6 +129,82 @@ public class PackageInternalsFinder {
             }
         }
         return result;
+    }
+
+    private String decode(String filePath) {
+        try {
+            return URLDecoder.decode(filePath, "utf-8");
+        } catch (Exception e) {
+            // ignore, return original string
+        }
+
+        return filePath;
+    }
+
+    public static JavaFileObject.Kind getKind(String name) {
+        if (name.endsWith(JavaFileObject.Kind.CLASS.extension))
+            return JavaFileObject.Kind.CLASS;
+        else if (name.endsWith(JavaFileObject.Kind.SOURCE.extension))
+            return JavaFileObject.Kind.SOURCE;
+        else if (name.endsWith(JavaFileObject.Kind.HTML.extension))
+            return JavaFileObject.Kind.HTML;
+        else
+            return JavaFileObject.Kind.OTHER;
+    }
+
+
+    public static class JarFileIndex {
+        private String jarUri;
+        private URI uri;
+
+        private Map<String, List<ClassUriWrapper>> packages = new HashMap<>();
+
+        public JarFileIndex(String jarUri, URI uri) throws IOException {
+            this.jarUri = jarUri;
+            this.uri = uri;
+            loadIndex();
+        }
+
+        private void loadIndex() throws IOException {
+            JarURLConnection jarConn = (JarURLConnection) uri.toURL().openConnection();
+            String rootEntryName = jarConn.getEntryName() == null ? "" : jarConn.getEntryName();
+            Enumeration<JarEntry> entryEnum = jarConn.getJarFile().entries();
+            while (entryEnum.hasMoreElements()) {
+                JarEntry jarEntry = entryEnum.nextElement();
+                String entryName = jarEntry.getName();
+                if (entryName.startsWith(rootEntryName) && entryName.endsWith(CLASS_FILE_EXTENSION)) {
+                    String className = entryName
+                            .substring(0, entryName.length() - CLASS_FILE_EXTENSION.length())
+                            .replace(rootEntryName, "")
+                            .replace("/", ".");
+                    if (className.startsWith(".")) className = className.substring(1);
+                    if (className.equals("package-info")
+                            || className.equals("module-info")
+                            || className.lastIndexOf(".") == -1) {
+                        continue;
+                    }
+                    String packageName = className.substring(0, className.lastIndexOf("."));
+                    List<ClassUriWrapper> classes = packages.get(packageName);
+                    if (classes == null) {
+                        classes = new ArrayList<>();
+                        packages.put(packageName, classes);
+                    }
+                    classes.add(new ClassUriWrapper(className, URI.create(jarUri + "!/" + entryName)));
+                }
+            }
+        }
+
+        public List<JavaFileObject> search(String packageName) {
+            if (this.packages.isEmpty()) {
+                return null;
+            }
+            if (this.packages.containsKey(packageName)) {
+                return packages.get(packageName).stream().map(item -> {
+                    return new CustomJavaFileObject(item.getClassName(), item.getUri());
+                }).collect(Collectors.toList());
+            }
+            return Collections.emptyList();
+        }
     }
 
 }

@@ -10,11 +10,13 @@ Use ByteBuddy and Instrument API for code redefinition(Java)
 <dependency>
   <groupId>io.github.bigwolftime</groupId>
   <artifactId>redefine</artifactId>
-  <version>0.0.2</version>
+  <version>0.0.6</version>
 </dependency>
 ```
 
 以 `Postman` 为例：
+
+Method 1:
 
 * 地址：`projectDomain/backend/redefine`
 * 请求方式：`POST form-data`
@@ -31,6 +33,39 @@ Use ByteBuddy and Instrument API for code redefinition(Java)
 `curl --location --request POST 'https://domain/projectName/backend/redefine' \
 --form 'class="com.xx.yy.YourClass"' \
 --form 'file=@"/User/project/com/xx/yy/YourClass.java"'`
+
+Method 2:
+
+```java
+@Bean
+public ServletRegistrationBean servletRegistrationBean() {
+  ServletRegistrationBean servletRegistrationBean = new ServletRegistrationBean();
+  try {
+      Class<?> extendRedefineServlet = Class.forName("com.bigwolftime.api.ExtendRedefineBase64Servlet");
+      HttpServlet httpServlet = (HttpServlet) extendRedefineServlet.newInstance();
+      servletRegistrationBean.setServlet(httpServlet);
+      servletRegistrationBean.addUrlMappings("/backend/redefine/base64");
+      return servletRegistrationBean;
+  } catch (Exception e) {
+      log.warn("not found ExtendRedefineServlet");
+  }
+
+  return null;
+}
+```
+
+* 地址: `projectDomain/backend/redefine/base64`
+* 请求方式: `POST`
+* 参数
+
+| 参数名         | 示例                  | 备注                                         |
+|-------------|---------------------| -------------------------------------------- |
+| class       | com.xx.yy.YourClass | 要替换的全限定类名(即 package.YourClassName) |
+| base64_file | base64 content      | source code with base64 encode format                               |
+
+
+The current implementation of the principle is rather crude, the internal logic is extract the current fat jar to the 
+`/tmp/redefine` directory, then construct the command: `javac -cp xxx -d xxx`.
 
 
 #### 注意事项

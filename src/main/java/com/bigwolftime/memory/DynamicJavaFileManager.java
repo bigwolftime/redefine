@@ -65,7 +65,7 @@ public class DynamicJavaFileManager extends ForwardingJavaFileManager<JavaFileMa
     @Override
     public String inferBinaryName(Location location, JavaFileObject file) {
         if (file instanceof CustomJavaFileObject) {
-            return ((CustomJavaFileObject) file).binaryName();
+            return ((CustomJavaFileObject) file).getClassName();
         } else {
             return super.inferBinaryName(location, file);
         }

@@ -20,17 +20,14 @@ package com.bigwolftime.compile;
  * #L%
  */
 
-import com.bigwolftime.memory.DynamicClassLoader;
-import com.bigwolftime.memory.DynamicCompilerException;
-import com.bigwolftime.memory.DynamicJavaFileManager;
-import com.bigwolftime.memory.StringSource;
+import com.bigwolftime.memory.*;
 import com.bigwolftime.util.ResourceUtils;
 
 import javax.tools.*;
 import java.io.File;
 import java.util.*;
 
-public class DynamicCompile {
+public class DynamicCompiler {
 
     private final JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
     private final StandardJavaFileManager standardFileManager;
@@ -41,7 +38,7 @@ public class DynamicCompile {
     private final List<Diagnostic<? extends JavaFileObject>> errors = new ArrayList<Diagnostic<? extends JavaFileObject>>();
     private final List<Diagnostic<? extends JavaFileObject>> warnings = new ArrayList<Diagnostic<? extends JavaFileObject>>();
 
-    public DynamicCompile(ClassLoader classLoader) {
+    public DynamicCompiler(ClassLoader classLoader) {
         if (javaCompiler == null) {
             throw new IllegalStateException(
                     "Can not load JavaCompiler from javax.tools.ToolProvider#getSystemJavaCompiler(),"
@@ -51,7 +48,7 @@ public class DynamicCompile {
 
         dynamicClassLoader = new DynamicClassLoader(classLoader);
 
-        String rootDir = DynamicCompile.class.getClassLoader().getResource("").getPath();
+        String rootDir = DynamicCompiler.class.getClassLoader().getResource("").getPath();
         File root = new File(rootDir);
         if (!root.exists()) {
             root.mkdirs();
@@ -62,6 +59,25 @@ public class DynamicCompile {
 
         String libs = ResourceUtils.getTomcatLibs(root);
         options.addAll(Arrays.asList("-d", rootDir, "-cp", jars + File.pathSeparator + libs + File.pathSeparator + rootDir, "-Xlint:unchecked"));
+    }
+    public DynamicCompiler(ClassLoader classLoader, JarFileParser jarFileParser) {
+        if (javaCompiler == null) {
+            throw new IllegalStateException(
+                    "Can not load JavaCompiler from javax.tools.ToolProvider#getSystemJavaCompiler(),"
+                            + " please confirm the application running in JDK not JRE.");
+        }
+        standardFileManager = javaCompiler.getStandardFileManager(null, null, null);
+
+        dynamicClassLoader = new DynamicClassLoader(classLoader);
+
+        String rootDir = DynamicCompiler.class.getClassLoader().getResource("").getPath();
+        File root = new File(rootDir);
+        if (!root.exists()) {
+            root.mkdirs();
+        }
+
+        options.addAll(Arrays.asList("-d", rootDir, "-cp", jarFileParser.getClassesJarsStr() + File.pathSeparator
+                + jarFileParser.getLibJarStr() + File.pathSeparator + rootDir, "-Xlint:unchecked"));
     }
 
     public void addSource(String className, String source) {
