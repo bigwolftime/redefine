@@ -1,31 +1,28 @@
 package com.bigwolftime.api;
 
 import com.bigwolftime.compile.DynamicCompiler;
+import com.bigwolftime.util.ClassLoaderUtil;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import org.apache.commons.io.IOUtils;
 
-import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
-import java.security.ProtectionDomain;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
-@WebServlet("/backend/redefine")
+@WebServlet("/backend/redefine/base64")
 @MultipartConfig
 public class ExtendRedefineServlet extends HttpServlet {
 
@@ -36,14 +33,16 @@ public class ExtendRedefineServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setCharacterEncoding("UTF-8");
         resp.setContentType("text/html;charset=UTF-8");
         String cls = req.getParameter("class");
+        String file = req.getParameter("base64_file");
 
-        Part filePart = req.getPart("file");
+        byte[] decode = Base64.getDecoder().decode(file);
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(decode);
 
-        byte[] bytes = compileByArthas(filePart.getInputStream(), cls);
+        byte[] bytes = compileByArthas(byteArrayInputStream, cls);
         try {
             transformer(cls, bytes);
             print(resp, "redefine success.");
@@ -56,8 +55,11 @@ public class ExtendRedefineServlet extends HttpServlet {
         String jarPath = DynamicCompiler.class.getProtectionDomain().getCodeSource().getLocation().getFile();
         File file = new File(jarPath);
 
-        URLClassLoader classLoader = new URLClassLoader(new URL[] { file.toURI().toURL() },
-                ClassLoader.getSystemClassLoader().getParent());
+        ClassLoader classLoader = ClassLoaderUtil.getClassLoaderByName(INSTRUMENT, className);
+        if (Objects.isNull(classLoader)) {
+            // default system class loader
+            classLoader = new URLClassLoader(new URL[] { file.toURI().toURL() }, ClassLoader.getSystemClassLoader().getParent());
+        }
 
         DynamicCompiler dynamicCompiler = new DynamicCompiler(classLoader);
 
@@ -73,23 +75,12 @@ public class ExtendRedefineServlet extends HttpServlet {
     private void transformer(String classNameWithPoint, byte[] bytes) throws ClassNotFoundException, UnmodifiableClassException {
         String classNameWithSlant = classNameWithPoint.replaceAll("\\.", "/");
 
-        /*ClassFileTransformer transformer = (loader, innerClassName, classBeingRedefined, protectionDomain, classfileBuffer) -> {
-            if (innerClassName.equals(classNameWithSlant)) {
+        ClassFileTransformer transformer = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
+            if (className.equals(classNameWithSlant)) {
                 return bytes;
             }
 
             return null;
-        };*/
-
-        ClassFileTransformer transformer = new ClassFileTransformer() {
-            @Override
-            public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) {
-                if (className.equals(classNameWithSlant)) {
-                    return bytes;
-                }
-
-                return null;
-            }
         };
 
         INSTRUMENT.addTransformer(transformer, true);
