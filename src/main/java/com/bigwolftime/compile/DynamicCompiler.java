@@ -20,12 +20,16 @@ package com.bigwolftime.compile;
  * #L%
  */
 
-import com.bigwolftime.memory.*;
-import com.bigwolftime.util.ResourceUtils;
+import com.bigwolftime.memory.DynamicClassLoader;
+import com.bigwolftime.memory.DynamicCompilerException;
+import com.bigwolftime.memory.DynamicJavaFileManager;
+import com.bigwolftime.memory.StringSource;
 
 import javax.tools.*;
-import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class DynamicCompiler {
 
@@ -46,38 +50,8 @@ public class DynamicCompiler {
         }
         standardFileManager = javaCompiler.getStandardFileManager(null, null, null);
 
+        options.add("-Xlint:unchecked");
         dynamicClassLoader = new DynamicClassLoader(classLoader);
-
-        String rootDir = DynamicCompiler.class.getClassLoader().getResource("").getPath();
-        File root = new File(rootDir);
-        if (!root.exists()) {
-            root.mkdirs();
-        }
-
-        String jarFile = rootDir.replace("/classes", "/lib");
-        String jars = ResourceUtils.getJars(jarFile);
-
-        String libs = ResourceUtils.getTomcatLibs(root);
-        options.addAll(Arrays.asList("-d", rootDir, "-cp", jars + File.pathSeparator + libs + File.pathSeparator + rootDir, "-Xlint:unchecked"));
-    }
-    public DynamicCompiler(ClassLoader classLoader, JarFileParser jarFileParser) {
-        if (javaCompiler == null) {
-            throw new IllegalStateException(
-                    "Can not load JavaCompiler from javax.tools.ToolProvider#getSystemJavaCompiler(),"
-                            + " please confirm the application running in JDK not JRE.");
-        }
-        standardFileManager = javaCompiler.getStandardFileManager(null, null, null);
-
-        dynamicClassLoader = new DynamicClassLoader(classLoader);
-
-        String rootDir = DynamicCompiler.class.getClassLoader().getResource("").getPath();
-        File root = new File(rootDir);
-        if (!root.exists()) {
-            root.mkdirs();
-        }
-
-        options.addAll(Arrays.asList("-d", rootDir, "-cp", jarFileParser.getClassesJarsStr() + File.pathSeparator
-                + jarFileParser.getLibJarStr() + File.pathSeparator + rootDir, "-Xlint:unchecked"));
     }
 
     public void addSource(String className, String source) {
