@@ -2,8 +2,8 @@ package com.bigwolftime.api;
 
 import com.bigwolftime.compile.DynamicCompiler;
 import com.bigwolftime.util.ClassLoaderUtil;
+import com.bigwolftime.util.IOUtil;
 import net.bytebuddy.agent.ByteBuddyAgent;
-import org.apache.commons.io.IOUtils;
 
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -16,7 +16,6 @@ import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.Map;
@@ -63,7 +62,7 @@ public class ExtendRedefineServlet extends HttpServlet {
 
         DynamicCompiler dynamicCompiler = new DynamicCompiler(classLoader);
 
-        String code = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
+        String code = IOUtil.toString(inputStream);
         dynamicCompiler.addSource(className, code);
 
         Map<String, byte[]> byteCodes = dynamicCompiler.buildByteCodes();
